@@ -26,7 +26,7 @@ export default function PlayerDatabase({ players, onPlayerAdded, onPlayerDeleted
     const handleAddPlayer = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch('http://localhost:5001/api/players', {
+            const response = await fetch('https://box-cricket-qt23.onrender.com/api/players', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newPlayer)
@@ -47,7 +47,7 @@ export default function PlayerDatabase({ players, onPlayerAdded, onPlayerDeleted
     const handleDeletePlayer = async (playerId: string) => {
         if (window.confirm("Are you sure you want to delete this player?")) {
             try {
-                const response = await fetch(`http://localhost:5001/api/players/${playerId}`, {
+                const response = await fetch(`https://box-cricket-qt23.onrender.com/api/players/${playerId}`, {
                     method: 'DELETE',
                 });
                 if (response.ok) {
@@ -267,3 +267,4 @@ export default function PlayerDatabase({ players, onPlayerAdded, onPlayerDeleted
         </div>
     );
 }
+

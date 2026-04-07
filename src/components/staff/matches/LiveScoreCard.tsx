@@ -20,7 +20,7 @@ export default function LiveScoreCard({ match, onUpdateScore, onDelete }: LiveSc
     const handleSaveScore = async () => {
         setIsSaving(true);
         try {
-            await fetch(`http://localhost:5001/api/matches/${matchId}`, {
+            await fetch(`https://box-cricket-qt23.onrender.com/api/matches/${matchId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ score1, score2 })
@@ -108,3 +108,4 @@ export default function LiveScoreCard({ match, onUpdateScore, onDelete }: LiveSc
         </div>
     );
 }
+

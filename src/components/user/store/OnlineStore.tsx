@@ -103,7 +103,7 @@ export function OnlineStore({ currentUser, onCheckoutComplete, onClose, isModal 
     };
 
     try {
-      const response = await fetch('http://localhost:5001/api/orders', {
+      const response = await fetch('https://box-cricket-qt23.onrender.com/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)

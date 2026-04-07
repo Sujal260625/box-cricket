@@ -63,15 +63,15 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
         const bRes = await bookingService.getBookings();
         setBookings(bRes);
 
-        const oResp = await fetch('http://localhost:5001/api/orders');
+        const oResp = await fetch('https://box-cricket-qt23.onrender.com/api/orders');
         const oData = await oResp.json();
         setOrders(oData.orders || []);
 
-        const aResp = await fetch('http://localhost:5001/api/activities');
+        const aResp = await fetch('https://box-cricket-qt23.onrender.com/api/activities');
         const aData = await aResp.json();
         setActivities(aData || []);
 
-        const iResp = await fetch('http://localhost:5001/api/inventory');
+        const iResp = await fetch('https://box-cricket-qt23.onrender.com/api/inventory');
         const iData = await iResp.json();
         setInventory(iData || []);
       } catch (e) {

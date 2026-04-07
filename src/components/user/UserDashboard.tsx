@@ -54,9 +54,9 @@ export function UserDashboard({ user, onLogout, navigateTo }: UserDashboardProps
 
     const fetchOrders = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/activities'); // We'll need a real orders endpoint or use activities
+        const response = await fetch('https://box-cricket-qt23.onrender.com/api/activities'); // We'll need a real orders endpoint or use activities
         // Better: let's fetch from the orders endpoint we created earlier
-        const orderResp = await fetch(`http://localhost:5001/api/orders?userId=${user.id}`);
+        const orderResp = await fetch(`https://box-cricket-qt23.onrender.com/api/orders?userId=${user.id}`);
         const data = await orderResp.json();
         setOrders(data.orders || []);
       } catch (e) { console.error(e); }

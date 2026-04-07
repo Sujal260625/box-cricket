@@ -39,7 +39,7 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
 
     const fetchAuctions = async () => {
         try {
-            const response = await fetch('http://localhost:5001/api/auctions');
+            const response = await fetch('https://box-cricket-qt23.onrender.com/api/auctions');
             const data = await response.json();
             setAuctions(data);
             setLoading(false);
@@ -61,7 +61,7 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
         }
 
         try {
-            const response = await fetch(`http://localhost:5001/api/auctions/${auctionId}/bid`, {
+            const response = await fetch(`https://box-cricket-qt23.onrender.com/api/auctions/${auctionId}/bid`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -250,3 +250,4 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
         </div>
     );
 }
+

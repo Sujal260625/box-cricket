@@ -41,7 +41,7 @@ export function InventoryManagement({ currentUser, onClose, isModal = true }: In
 
   const fetchInventory = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/inventory');
+      const response = await fetch('https://box-cricket-qt23.onrender.com/api/inventory');
       const data = await response.json();
       const mappedData = data.map((item: any) => ({
         ...item,
@@ -103,7 +103,7 @@ export function InventoryManagement({ currentUser, onClose, isModal = true }: In
 
   const handleAddItem = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/inventory', {
+      const response = await fetch('https://box-cricket-qt23.onrender.com/api/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newItem)
@@ -133,7 +133,7 @@ export function InventoryManagement({ currentUser, onClose, isModal = true }: In
   const handleUpdateItem = async () => {
     if (editingItem) {
       try {
-        const response = await fetch(`http://localhost:5001/api/inventory/${editingItem.id}`, {
+        const response = await fetch(`https://box-cricket-qt23.onrender.com/api/inventory/${editingItem.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -155,7 +155,7 @@ export function InventoryManagement({ currentUser, onClose, isModal = true }: In
   const handleDeleteItem = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
       try {
-        await fetch(`http://localhost:5001/api/inventory/${id}`, {
+        await fetch(`https://box-cricket-qt23.onrender.com/api/inventory/${id}`, {
           method: 'DELETE'
         });
         fetchInventory();
@@ -169,7 +169,7 @@ export function InventoryManagement({ currentUser, onClose, isModal = true }: In
     const item = inventory.find(i => i.id === id);
     if (item) {
       try {
-        await fetch(`http://localhost:5001/api/inventory/${id}`, {
+        await fetch(`https://box-cricket-qt23.onrender.com/api/inventory/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

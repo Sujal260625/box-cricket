@@ -7,7 +7,7 @@ export default function TurfGround() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [newGround, setNewGround] = useState({ name: '', status: 'active', color: 'bg-green-500' });
 
-    const API_BASE_URL = 'http://localhost:5001/api';
+    const API_BASE_URL = 'https://box-cricket-qt23.onrender.com/api';
 
     useEffect(() => {
         fetchGrounds();
@@ -198,3 +198,4 @@ export default function TurfGround() {
         </div>
     );
 }
+

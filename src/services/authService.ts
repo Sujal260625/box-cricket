@@ -26,7 +26,7 @@ const decodeMockToken = (token: string) => {
   }
 };
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = 'https://box-cricket-qt23.onrender.com/api';
 
 export const authService = {
   // Check if user exists by email and return their details

@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5001/api';
+const API_URL = 'https://box-cricket-qt23.onrender.com/api';
 
 export interface Booking {
     id?: string;
@@ -40,3 +40,4 @@ export const bookingService = {
         }
     }
 };
+
