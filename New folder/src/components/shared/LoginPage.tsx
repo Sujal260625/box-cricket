@@ -483,34 +483,29 @@ export function LoginPage({ onLogin, onPhoneLogin, onSocialLogin, navigateTo }: 
             )}
           </form>
 
-          <div style={{ marginTop: 25, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <button
-              onClick={() => navigateTo('signup')}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: 20,
-                background: 'white',
-                border: `2px solid ${GREEN}`,
-                color: GREEN,
-                fontWeight: '800',
-                fontSize: 13,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: `0 4px 12px ${SHADOW}`,
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = '#f0fdf4';
-                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'white';
-                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
-              }}
-            >
-              Don't have an account? Sign Up
-            </button>
+          {/* Social Section — exact Uiverse style */}
+          <div style={s.socialContainer}>
+            <span style={s.socialTitle}>— Or Sign in with —</span>
+            <div style={s.socialAccounts}>
+              {[
+                { label:'google',   svg:<GoogleSVG /> },
+                { label:'apple',    svg:<AppleSVG /> },
+                { label:'twitter',  svg:<XSVG /> },
+              ].map(({ label, svg }) => (
+                <button key={label} onClick={() => handleSocialLogin(label)} style={s.socialButton}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.2)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+                  onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.9)'; }}
+                  onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}>
+                  {svg}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <span style={s.agreement}>
+            <a href="#" style={s.agreementLink}>Learn user licence agreement</a>
+          </span>
         </div>
 
         {/* Developer Shortcuts */}
