@@ -42,7 +42,7 @@
             "jspdf": "^4.2.1",
             "jspdf-autotable": "^5.0.7",
             "lucide-react": "^0.487.0",
-            "mongoos": "^0.0.1-security",
+            "mongoose": "^8.2.4",
             "next-themes": "^0.4.6",
             "react": "^18.3.1",
             "react-day-picker": "^8.10.1",
@@ -60,8 +60,14 @@
             "@vitejs/plugin-react-swc": "^3.10.2",
             "vite": "^6.4.1"
       },
+      "engines": {
+            "node": ">=20.19.0"
+      },
       "scripts": {
             "dev": "vite",
-            "build": "vite build"
+            "build": "vite build",
+            "start": "node server/index.js",
+            "deploy": "npm install && npm run build && cd server && npm install && cd .. && npm start"
       }
 }
+

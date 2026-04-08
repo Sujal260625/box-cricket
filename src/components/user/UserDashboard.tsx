@@ -56,14 +56,15 @@ export function UserDashboard({ user, onLogout, navigateTo }: UserDashboardProps
     fetchBookings();
 
     const fetchOrders = async () => {
+      const BASE_URL = import.meta.env.VITE_API_URL || 'https://box-cricket-qt23.onrender.com/api';
       try {
-        const response = await fetch('https://box-cricket-qt23.onrender.com/api/activities'); // We'll need a real orders endpoint or use activities
-        // Better: let's fetch from the orders endpoint we created earlier
-        const orderResp = await fetch(`https://box-cricket-qt23.onrender.com/api/orders?userId=${user.id}`);
+        const response = await fetch(`${BASE_URL}/activities`); 
+        const orderResp = await fetch(`${BASE_URL}/orders?userId=${user.id}`);
         const data = await orderResp.json();
         setOrders(data.orders || []);
       } catch (e) { console.error(e); }
     };
+
     fetchOrders();
   }, [user.id]);
 

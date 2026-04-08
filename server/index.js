@@ -18,13 +18,16 @@ const Ground = require('./models/Ground');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/boxcricket')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/boxcricket', {
+    serverSelectionTimeoutMS: 5000 // 5 seconds timeout
+})
     .then(() => console.log('✅ MongoDB Connected Successfully to Atlas/Local'))
     .catch(err => {
         console.error('❌ CRITICAL: MongoDB Connection Error!');
         console.error('Error Details:', err.message);
-        console.error('Please ensure your IP is whitelisted in MongoDB Atlas Network Access.');
+        console.error('Please ensure your IP is whitelisted in MongoDB Atlas Network Access or check your MONGODB_URI.');
     });
+
 
 app.use(cors());
 app.use(express.json());
