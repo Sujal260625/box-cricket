@@ -56,7 +56,7 @@ export function UserDashboard({ user, onLogout, navigateTo }: UserDashboardProps
     fetchBookings();
 
     const fetchOrders = async () => {
-      const BASE_URL = import.meta.env.VITE_API_URL || 'https://box-cricket-qt23.onrender.com/api';
+      const BASE_URL = import.meta.env.VITE_API_URL || '/api';
       try {
         const response = await fetch(`${BASE_URL}/activities`); 
         const orderResp = await fetch(`${BASE_URL}/orders?userId=${user.id}`);

@@ -48,7 +48,7 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
 
     const fetchAuctions = async () => {
         try {
-            const response = await fetch('https://box-cricket-qt23.onrender.com/api/auctions');
+            const response = await fetch('/api/auctions');
             const data = await response.json();
             setAuctions(data);
             setLoading(false);
@@ -70,7 +70,7 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
         }
 
         try {
-            const response = await fetch(`https://box-cricket-qt23.onrender.com/api/auctions/${auctionId}/bid`, {
+            const response = await fetch(`/api/auctions/${auctionId}/bid`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -112,7 +112,7 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
                 creatorName: currentUser.name
             };
 
-            const response = await fetch('https://box-cricket-qt23.onrender.com/api/auctions', {
+            const response = await fetch('/api/auctions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(auctionData)
@@ -132,7 +132,7 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
     const handleDeleteAuction = async (id: string) => {
         if (!window.confirm('Are you sure you want to delete this auction?')) return;
         try {
-            const response = await fetch(`https://box-cricket-qt23.onrender.com/api/auctions/${id}`, {
+            const response = await fetch(`/api/auctions/${id}`, {
                 method: 'DELETE'
             });
             const data = await response.json();

@@ -68,15 +68,15 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
         const bRes = await bookingService.getBookings();
         setBookings(bRes);
 
-        const oResp = await fetch('https://box-cricket-qt23.onrender.com/api/orders');
+        const oResp = await fetch('/api/orders');
         const oData = await oResp.json();
         setOrders(oData.orders || []);
 
-        const aResp = await fetch('https://box-cricket-qt23.onrender.com/api/activities');
+        const aResp = await fetch('/api/activities');
         const aData = await aResp.json();
         setActivities(aData || []);
 
-        const iResp = await fetch('https://box-cricket-qt23.onrender.com/api/inventory');
+        const iResp = await fetch('/api/inventory');
         const iData = await iResp.json();
         setInventory(iData || []);
       } catch (e) {
@@ -110,7 +110,7 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
 
   const handleUpdatePaymentStatus = async (bookingId: string, status: 'paid' | 'rejected') => {
     try {
-      const res = await fetch(`https://box-cricket-qt23.onrender.com/api/bookings/${bookingId}/payment`, {
+      const res = await fetch(`/api/bookings/${bookingId}/payment`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })

@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://box-cricket-qt23.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export interface Booking {
     id?: string;

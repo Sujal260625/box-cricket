@@ -25,7 +25,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     const refreshStore = async () => {
         try {
             setLoading(true);
-            const res = await fetch('https://box-cricket-qt23.onrender.com/api/inventory');
+            const res = await fetch('/api/inventory');
             const data = await res.json();
             setStoreItems(data.map((item: any) => {
                 let imageUrl = item.image;
@@ -58,7 +58,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
     const updateStock = async (id: string | number, newQuantity: number) => {
         try {
-            await fetch(`https://box-cricket-qt23.onrender.com/api/inventory/${id}`, {
+            await fetch(`/api/inventory/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ quantity: newQuantity })

@@ -24,8 +24,8 @@ export function StoreInventory({ currentUser }: StoreInventoryProps) {
         try {
             setLoading(true);
             const [invRes, orderRes] = await Promise.all([
-                fetch('https://box-cricket-qt23.onrender.com/api/inventory'),
-                fetch('https://box-cricket-qt23.onrender.com/api/orders')
+                fetch('/api/inventory'),
+                fetch('/api/orders')
             ]);
             const invData = await invRes.json();
             const orderData = await orderRes.json();
@@ -44,7 +44,7 @@ export function StoreInventory({ currentUser }: StoreInventoryProps) {
 
     const handleUpdateStock = async (id: string, newQty: number) => {
         try {
-            await fetch(`https://box-cricket-qt23.onrender.com/api/inventory/${id}`, {
+            await fetch(`/api/inventory/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ quantity: newQty })
@@ -55,7 +55,7 @@ export function StoreInventory({ currentUser }: StoreInventoryProps) {
 
     const handleFulfillOrder = async (id: string) => {
         try {
-            await fetch(`https://box-cricket-qt23.onrender.com/api/orders/${id}/status`, {
+            await fetch(`/api/orders/${id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'delivered' })

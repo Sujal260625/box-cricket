@@ -34,7 +34,7 @@ interface StaffDashboardProps {
 
 type StaffView = 'overview' | 'payments' | 'matches' | 'bookings' | 'stores' | 'profile' | 'players' | 'turf' | 'auctions';
 
-const API_BASE_URL = 'https://box-cricket-qt23.onrender.com/api';
+const API_BASE_URL = '/api';
 
 export function StaffDashboard({ user, onLogout, navigateTo }: StaffDashboardProps) {
   const { storeItems } = useStore();
