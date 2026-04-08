@@ -32,6 +32,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/boxcricke
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../dist')));
+
 // Helper to log activity
 const logActivity = async (userId, userName, action, details) => {
     try {
@@ -43,6 +46,11 @@ const logActivity = async (userId, userName, action, details) => {
 };
 
 app.get('/api/ping', (req, res) => res.json({ status: 'ok', port: PORT, database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' }));
+
+// Root route for health checks and to serve the React app
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 
 // Email Transport
 const transporter = nodemailer.createTransport({
@@ -547,6 +555,11 @@ app.delete('/api/grounds/:id', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+});
+
+// Explicitly handle all other routes by serving the index.html (SPA support)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
