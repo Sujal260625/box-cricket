@@ -1,5 +1,5 @@
+import React, { useState } from 'react';
 import { User } from '../../App';
-import { useState } from 'react';
 import {
   IndianRupee,
   Clock,
@@ -14,8 +14,10 @@ import {
   Settings,
   LogOut,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Gavel
 } from 'lucide-react';
+import { AuctionSystem } from '../user/AuctionSystem';
 import { mockBookings, mockMatches, mockStaff, mockStoreItems, mockTurfs } from '../../data/mockData';
 import { StaffLocationTracker } from './StaffLocationTracker';
 import { BookingConflictDetector } from './BookingConflictDetector';
@@ -44,7 +46,7 @@ interface AdminDashboardProps {
   navigateTo: (page: string) => void;
 }
 
-type AdminView = 'overview' | 'payments' | 'matches' | 'bookings' | 'conflicts' | 'staff' | 'stores' | 'turfs' | 'analytics' | 'reports' | 'export' | 'inventory';
+type AdminView = 'overview' | 'payments' | 'matches' | 'bookings' | 'conflicts' | 'staff' | 'stores' | 'turfs' | 'analytics' | 'reports' | 'export' | 'inventory' | 'auctions';
 
 export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardProps) {
   const [currentView, setCurrentView] = useState<AdminView>('overview');
@@ -87,7 +89,7 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
     setShowStaffTracker(false);
   };
 
-  const menuItems = [
+  const menuItems: { id: string; label: string; icon: React.ReactNode; action?: () => void }[] = [
     { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-5 h-5" /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
     { id: 'reports', label: 'Reports', icon: <Download className="w-5 h-5" /> },
@@ -96,50 +98,86 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
     { id: 'bookings', label: 'Bookings', icon: <Calendar className="w-5 h-5" /> },
     { id: 'conflicts', label: 'Booking Conflicts', icon: <AlertTriangle className="w-5 h-5" /> },
     { id: 'inventory', label: 'Inventory Management', icon: <Package className="w-5 h-5" /> },
+    { id: 'auctions', label: 'Premium Auctions', icon: <Gavel className="w-5 h-5" /> },
     { id: 'export', label: 'Export Reports', icon: <Download className="w-5 h-5" /> },
     { id: 'staff', label: 'Staff Tracking', icon: <MapPin className="w-5 h-5" /> },
     { id: 'stores', label: 'Store Management', icon: <Store className="w-5 h-5" /> },
     { id: 'turfs', label: 'Turf Management', icon: <Settings className="w-5 h-5" /> },
   ];
 
+  const handleUpdatePaymentStatus = async (bookingId: string, status: 'paid' | 'rejected') => {
+    try {
+      const res = await fetch(`https://box-cricket-qt23.onrender.com/api/bookings/${bookingId}/payment`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBookings(prev => prev.map(b =>
+          (b._id || b.id) === bookingId ? { ...b, paymentStatus: status } : b
+        ));
+      }
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+    }
+  };
+
   // Calculate statistics
-  const totalRevenue = bookings.length * 500;
-  const pendingPayments = 0;
+  const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid').reduce((sum, b) => sum + (b.totalPrice || 500), 0);
+  const pendingPayments = bookings.filter(b => b.paymentStatus === 'pending').reduce((sum, b) => sum + (b.totalPrice || 500), 0);
   const liveMatches = mockMatches.filter(m => m.status === 'live').length;
-  const totalBookings = bookings.length;
+  const totalBookings = bookings.filter(b => b.paymentStatus !== 'rejected').length;
 
   // Calculate additional analytics
   const bookingTrend = useMemo(() => [
-    { day: 'Mon', count: bookings.filter(b => new Date(b.date).getDay() === 1).length },
-    { day: 'Tue', count: bookings.filter(b => new Date(b.date).getDay() === 2).length },
-    { day: 'Wed', count: bookings.filter(b => new Date(b.date).getDay() === 3).length },
-    { day: 'Thu', count: bookings.filter(b => new Date(b.date).getDay() === 4).length },
-    { day: 'Fri', count: bookings.filter(b => new Date(b.date).getDay() === 5).length },
-    { day: 'Sat', count: bookings.filter(b => new Date(b.date).getDay() === 6).length },
-    { day: 'Sun', count: bookings.filter(b => new Date(b.date).getDay() === 0).length },
-  ].map(d => ({ ...d, count: d.count || Math.floor(Math.random() * 10) + 5 })), [bookings]);
+    { day: 'Mon', count: bookings.filter(b => b.paymentStatus !== 'rejected' && new Date(b.date).getDay() === 1).length },
+    { day: 'Tue', count: bookings.filter(b => b.paymentStatus !== 'rejected' && new Date(b.date).getDay() === 2).length },
+    { day: 'Wed', count: bookings.filter(b => b.paymentStatus !== 'rejected' && new Date(b.date).getDay() === 3).length },
+    { day: 'Thu', count: bookings.filter(b => b.paymentStatus !== 'rejected' && new Date(b.date).getDay() === 4).length },
+    { day: 'Fri', count: bookings.filter(b => b.paymentStatus !== 'rejected' && new Date(b.date).getDay() === 5).length },
+    { day: 'Sat', count: bookings.filter(b => b.paymentStatus !== 'rejected' && new Date(b.date).getDay() === 6).length },
+    { day: 'Sun', count: bookings.filter(b => b.paymentStatus !== 'rejected' && new Date(b.date).getDay() === 0).length },
+  ], [bookings]);
 
   const revenueData = useMemo(() => [
-    { name: 'Mon', revenue: bookings.filter(b => new Date(b.date).getDay() === 1).length * 500 },
-    { name: 'Tue', revenue: bookings.filter(b => new Date(b.date).getDay() === 2).length * 500 },
-    { name: 'Wed', revenue: bookings.filter(b => new Date(b.date).getDay() === 3).length * 500 },
-    { name: 'Thu', revenue: bookings.filter(b => new Date(b.date).getDay() === 4).length * 500 },
-    { name: 'Fri', revenue: bookings.filter(b => new Date(b.date).getDay() === 5).length * 500 },
-    { name: 'Sat', revenue: bookings.filter(b => new Date(b.date).getDay() === 6).length * 500 },
-    { name: 'Sun', revenue: bookings.filter(b => new Date(b.date).getDay() === 0).length * 500 },
-  ].map(d => ({ ...d, revenue: d.revenue || Math.floor(Math.random() * 5000) + 2000 })), [bookings]);
+    { name: 'Mon', revenue: bookings.filter(b => b.paymentStatus === 'paid' && new Date(b.date).getDay() === 1).reduce((sum, b) => sum + (b.totalPrice || 500), 0) },
+    { name: 'Tue', revenue: bookings.filter(b => b.paymentStatus === 'paid' && new Date(b.date).getDay() === 2).reduce((sum, b) => sum + (b.totalPrice || 500), 0) },
+    { name: 'Wed', revenue: bookings.filter(b => b.paymentStatus === 'paid' && new Date(b.date).getDay() === 3).reduce((sum, b) => sum + (b.totalPrice || 500), 0) },
+    { name: 'Thu', revenue: bookings.filter(b => b.paymentStatus === 'paid' && new Date(b.date).getDay() === 4).reduce((sum, b) => sum + (b.totalPrice || 500), 0) },
+    { name: 'Fri', revenue: bookings.filter(b => b.paymentStatus === 'paid' && new Date(b.date).getDay() === 5).reduce((sum, b) => sum + (b.totalPrice || 500), 0) },
+    { name: 'Sat', revenue: bookings.filter(b => b.paymentStatus === 'paid' && new Date(b.date).getDay() === 6).reduce((sum, b) => sum + (b.totalPrice || 500), 0) },
+    { name: 'Sun', revenue: bookings.filter(b => b.paymentStatus === 'paid' && new Date(b.date).getDay() === 0).reduce((sum, b) => sum + (b.totalPrice || 500), 0) },
+  ], [bookings]);
+
 
   const revenueByTurf = mockTurfs.map(turf => {
     const turfRevenue = bookings
-      .filter(b => b.turfName === turf.name)
-      .length * 500;
+      .filter(b => b.turfName === turf.name && b.paymentStatus === 'paid')
+      .reduce((sum, b) => sum + (b.totalPrice || 500), 0);
     return { name: turf.name, revenue: turfRevenue };
   });
 
   const revenueByStore = [
     { name: 'Food Store', revenue: orders.filter(o => o.items.some((i: any) => i.category === 'food')).reduce((sum, o) => sum + o.total, 0) },
-    { name: 'Equipment Store', revenue: orders.filter(o => o.items.some((i: any) => i.category === 'sports')).reduce((sum, o) => sum + o.total, 0) },
+    { name: 'Sports Store', revenue: orders.filter(o => o.items.some((i: any) => (i.category || '').toLowerCase().includes('sport'))).reduce((sum, o) => sum + o.total, 0) },
   ];
+
+  const bookingDistribution = useMemo(() => {
+    if (bookings.length === 0) return { morning: 0, afternoon: 0, evening: 0, night: 0 };
+    const morning = bookings.filter(b => { const h = parseInt(b.startTime.split(':')[0]); return h >= 9 && h < 12; }).length;
+    const afternoon = bookings.filter(b => { const h = parseInt(b.startTime.split(':')[0]); return h >= 12 && h < 16; }).length;
+    const evening = bookings.filter(b => { const h = parseInt(b.startTime.split(':')[0]); return h >= 16 && h < 20; }).length;
+    const night = bookings.filter(b => { const h = parseInt(b.startTime.split(':')[0]); return h >= 20 || h < 9; }).length;
+
+    const pct = (val: number) => Math.round((val / bookings.length) * 100);
+    return {
+      morning: pct(morning),
+      afternoon: pct(afternoon),
+      evening: pct(evening),
+      night: pct(night)
+    };
+  }, [bookings]);
 
   return (
     <>
@@ -428,19 +466,19 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
                   <h2 className="text-xl mb-4">Booking Distribution by Time</h2>
                   <div className="grid grid-cols-4 gap-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">25%</div>
+                      <div className="text-2xl font-bold text-green-600">{bookingDistribution.morning}%</div>
                       <div className="text-sm text-gray-600">Morning (9AM-12PM)</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">35%</div>
+                      <div className="text-2xl font-bold text-blue-600">{bookingDistribution.afternoon}%</div>
                       <div className="text-sm text-gray-600">Afternoon (12PM-4PM)</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-yellow-600">25%</div>
+                      <div className="text-2xl font-bold text-yellow-600">{bookingDistribution.evening}%</div>
                       <div className="text-sm text-gray-600">Evening (4PM-8PM)</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-red-600">15%</div>
+                      <div className="text-2xl font-bold text-red-600">{bookingDistribution.night}%</div>
                       <div className="text-sm text-gray-600">Night (8PM-11PM)</div>
                     </div>
                   </div>
@@ -556,52 +594,82 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
                 <h1 className="text-3xl mb-6">Payment Analytics</h1>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-white rounded-xl shadow-md p-6">
-                    <p className="text-gray-600 mb-2">Total Collected</p>
-                    <p className="text-3xl font-bold text-green-600">₹{totalRevenue}</p>
+                  <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+                    <p className="text-gray-600 mb-2 font-bold uppercase text-xs tracking-wider">Total Collected</p>
+                    <p className="text-3xl font-black text-green-600">₹{bookings.filter(b => b.paymentStatus === 'paid').reduce((sum, b) => sum + (b.totalPrice || 0), 0) + orders.reduce((sum, o) => sum + (o.total || 0), 0)}</p>
                   </div>
-                  <div className="bg-white rounded-xl shadow-md p-6">
-                    <p className="text-gray-600 mb-2">Pending Amount</p>
-                    <p className="text-3xl font-bold text-yellow-600">₹{pendingPayments}</p>
+                  <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+                    <p className="text-gray-600 mb-2 font-bold uppercase text-xs tracking-wider">Pending Amount</p>
+                    <p className="text-3xl font-black text-yellow-600">₹{bookings.filter(b => b.paymentStatus === 'pending').reduce((sum, b) => sum + (b.totalPrice || 0), 0)}</p>
                   </div>
-                  <div className="bg-white rounded-xl shadow-md p-6">
-                    <p className="text-gray-600 mb-2">Refunded</p>
-                    <p className="text-3xl font-bold text-red-600">₹0</p>
+                  <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-red-500">
+                    <p className="text-gray-600 mb-2 font-bold uppercase text-xs tracking-wider">Refunded</p>
+                    <p className="text-3xl font-black text-red-600">₹0</p>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-md p-6">
-                  <h2 className="text-xl mb-4">Payment History</h2>
+                <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+                  <h2 className="text-xl mb-4 font-bold flex items-center gap-2">
+                    <div className="w-2 h-6 bg-green-600 rounded-full"></div>
+                    Real-Time Payment History
+                  </h2>
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-widest font-black">
                         <tr>
-                          <th className="px-4 py-3 text-left">Booking ID</th>
+                          <th className="px-4 py-3 text-left">#</th>
                           <th className="px-4 py-3 text-left">Turf</th>
                           <th className="px-4 py-3 text-left">Customer</th>
                           <th className="px-4 py-3 text-left">Date</th>
                           <th className="px-4 py-3 text-left">Amount</th>
                           <th className="px-4 py-3 text-left">Status</th>
+                          <th className="px-4 py-3 text-left">Actions</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        {mockBookings.map((booking) => (
-                          <tr key={booking.id} className="border-b border-gray-200">
-                            <td className="px-4 py-3">#{booking.id}</td>
-                            <td className="px-4 py-3">{booking.turfName}</td>
-                            <td className="px-4 py-3">{booking.userName}</td>
-                            <td className="px-4 py-3">{booking.date}</td>
-                            <td className="px-4 py-3 font-bold text-green-600">₹{booking.totalPrice}</td>
+                      <tbody className="divide-y divide-gray-100">
+                        {bookings.map((booking, idx) => (
+                          <tr key={booking._id || booking.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-3 font-bold text-gray-400">{idx + 1}</td>
+                            <td className="px-4 py-3 font-bold text-gray-800">{booking.turfName}</td>
+                            <td className="px-4 py-3 font-medium text-gray-600">{booking.userName}</td>
+                            <td className="px-4 py-3 text-gray-500">{booking.date}</td>
+                            <td className="px-4 py-3 font-black text-green-600">₹{booking.totalPrice}</td>
                             <td className="px-4 py-3">
-                              <span className={`px-3 py-1 rounded-full text-sm ${booking.paymentStatus === 'paid'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                {booking.paymentStatus}
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                booking.paymentStatus === 'paid'
+                                  ? 'bg-green-100 text-green-700 border border-green-200'
+                                  : booking.paymentStatus === 'rejected'
+                                  ? 'bg-red-100 text-red-700 border border-red-200'
+                                  : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                              }`}>
+                                {booking.paymentStatus || 'pending'}
                               </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {booking.paymentStatus === 'pending' && (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleUpdatePaymentStatus(booking._id || booking.id!, 'paid')}
+                                    className="px-2 py-1 bg-green-600 text-white text-[10px] rounded font-bold hover:bg-green-700"
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdatePaymentStatus(booking._id || booking.id!, 'rejected')}
+                                    className="px-2 py-1 bg-red-600 text-white text-[10px] rounded font-bold hover:bg-red-700"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         ))}
+                        {bookings.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-10 text-center text-gray-400 italic">No real-time payments recorded</td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -709,7 +777,16 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
               <ExportReports
                 currentUser={user}
                 isModal={false}
+                bookings={bookings}
+                orders={orders}
+                activities={activities}
               />
+            )}
+
+            {currentView === 'auctions' && (
+              <div className="h-full">
+                <AuctionSystem currentUser={user} isModal={false} />
+              </div>
             )}
 
             {currentView === 'inventory' && (

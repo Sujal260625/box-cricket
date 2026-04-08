@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User } from '../../App';
+import { Booking, bookingService } from '../../services/bookingService';
 import {
   Download,
   FileText,
@@ -26,9 +27,13 @@ interface ExportReportsProps {
   currentUser: User;
   onClose?: () => void;
   isModal?: boolean;
+  bookings?: Booking[];
+  orders?: any[];
+  inventory?: any[];
+  activities?: any[];
 }
 
-export function ExportReports({ currentUser, onClose, isModal = true }: ExportReportsProps) {
+export function ExportReports({ currentUser, onClose, isModal = true, bookings = [], orders = [], inventory = [], activities = [] }: ExportReportsProps) {
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv');
   const [dateRange, setDateRange] = useState({ start: '2026-01-01', end: '2026-01-31' });
@@ -85,40 +90,20 @@ export function ExportReports({ currentUser, onClose, isModal = true }: ExportRe
   const generateReportData = (reportId: string) => {
     switch (reportId) {
       case 'booking':
-        return [
-          { id: '1', turf: 'Elite Football Arena', user: 'John Player', date: '2026-01-05', time: '14:00-16:00', duration: 2, amount: 1000, status: 'confirmed' },
-          { id: '2', turf: 'Grand Cricket Ground', user: 'Sarah Player', date: '2026-01-06', time: '10:00-12:00', duration: 2, amount: 2000, status: 'confirmed' },
-          { id: '3', turf: 'Premium Basketball Court', user: 'Mike Johnson', date: '2026-01-07', time: '18:00-19:00', duration: 1, amount: 400, status: 'pending' }
-        ];
+        return bookings.length > 0 ? bookings : [{ id: '1', turfName: 'Elite Arena', userName: 'Demo', date: '2026', status: 'confirmed' }];
       case 'payment':
-        return [
-          { id: '1', bookingId: '101', user: 'John Player', amount: 1000, method: 'Credit Card', status: 'paid', date: '2026-01-05' },
-          { id: '2', bookingId: '102', user: 'Sarah Player', amount: 2000, method: 'UPI', status: 'paid', date: '2026-01-06' },
-          { id: '3', bookingId: '103', user: 'Mike Johnson', amount: 400, method: 'Net Banking', status: 'pending', date: '2026-01-07' }
-        ];
+        return bookings.map(b => ({ id: b.id, customer: b.userName, amount: 500, method: b.paymentMethod || 'cash', status: b.paymentStatus, date: b.date }));
       case 'inventory':
-        return [
-          { id: '1', name: 'Energy Drink', category: 'food', price: 80, stock: 25, minStock: 10, supplier: 'Beverage Co.' },
-          { id: '2', name: 'Protein Bar', category: 'food', price: 75, stock: 5, minStock: 10, supplier: 'Nutrition Co.' },
-          { id: '3', name: 'Football', category: 'sports', price: 1200, stock: 8, minStock: 5, supplier: 'Sports Gear Inc.' }
-        ];
+        return inventory.length > 0 ? inventory : [{ category: 'System', message: 'Master Inventory Management active' }];
       case 'user':
-        return [
-          { id: '1', name: 'John Player', email: 'john@example.com', bookings: 5, totalSpent: 2500, lastActive: '2026-01-07' },
-          { id: '2', name: 'Sarah Player', email: 'sarah@example.com', bookings: 3, totalSpent: 1800, lastActive: '2026-01-06' },
-          { id: '3', name: 'Mike Johnson', email: 'mike@example.com', bookings: 2, totalSpent: 800, lastActive: '2026-01-05' }
-        ];
+        return activities.filter(a => a.action === 'LOGIN').map(a => ({ email: a.userName, lastActive: new Date(a.timestamp).toLocaleString() }));
       case 'tournament':
-        return [
-          { id: '1', name: 'Winter Football Championship 2026', sport: 'Football', participants: 12, prize: '₹5,000', status: 'open' },
-          { id: '2', name: 'Premier Cricket League', sport: 'Cricket', participants: 8, prize: '₹10,000', status: 'open' },
-          { id: '3', name: '3v3 Basketball Tournament', sport: 'Basketball', participants: 20, prize: '₹2,000', status: 'ongoing' }
-        ];
+        return [{ name: 'Box Cricket Premier League', status: 'Ongoing', participants: 12 }];
       case 'revenue':
         return [
-          { id: '1', turf: 'Elite Football Arena', revenue: 25000, bookings: 25, avgBooking: 1000 },
-          { id: '2', turf: 'Grand Cricket Ground', revenue: 30000, bookings: 20, avgBooking: 1500 },
-          { id: '3', turf: 'Premium Basketball Court', revenue: 12000, bookings: 30, avgBooking: 400 }
+          { category: 'Turf Bookings', total: bookings.length * 500 },
+          { category: 'Store Orders', total: orders.reduce((sum, o) => sum + o.total, 0) },
+          { category: 'Grand Total', total: (bookings.length * 500) + orders.reduce((sum, o) => sum + o.total, 0) }
         ];
       default:
         return [];

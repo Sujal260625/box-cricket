@@ -2,6 +2,7 @@ const API_URL = 'https://box-cricket-qt23.onrender.com/api';
 
 export interface Booking {
     id?: string;
+    _id?: string;
     turfId: string;
     turfName: string;
     userName: string;

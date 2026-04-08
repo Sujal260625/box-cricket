@@ -30,6 +30,15 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
     const [activeAuctionId, setActiveAuctionId] = useState<string | null>(null);
     const [activeItemId, setActiveItemId] = useState<string | null>(null);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [newAuction, setNewAuction] = useState({
+        title: '',
+        description: '',
+        startTime: '',
+        endTime: '',
+        itemName: '',
+        startingBid: 0
+    });
 
     useEffect(() => {
         fetchAuctions();
@@ -86,6 +95,56 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
         }
     };
 
+    const handleCreateAuction = async () => {
+        if (!currentUser) return;
+        try {
+            const auctionData = {
+                title: newAuction.title,
+                description: newAuction.description,
+                startTime: new Date(newAuction.startTime).toISOString(),
+                endTime: new Date(newAuction.endTime).toISOString(),
+                items: [{
+                    name: newAuction.itemName,
+                    startingBid: newAuction.startingBid,
+                    currentBid: newAuction.startingBid
+                }],
+                createdBy: currentUser.id,
+                creatorName: currentUser.name
+            };
+
+            const response = await fetch('https://box-cricket-qt23.onrender.com/api/auctions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(auctionData)
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                setMessage({ type: 'success', text: 'Auction created successfully!' });
+                setShowCreateForm(false);
+                fetchAuctions();
+            }
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed to create auction' });
+        }
+    };
+
+    const handleDeleteAuction = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this auction?')) return;
+        try {
+            const response = await fetch(`https://box-cricket-qt23.onrender.com/api/auctions/${id}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+            if (data.success) {
+                setMessage({ type: 'success', text: 'Auction deleted' });
+                fetchAuctions();
+            }
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed to delete auction' });
+        }
+    };
+
     const getTimeRemaining = (endTime: string) => {
         const total = Date.parse(endTime) - Date.now();
         if (total <= 0) return 'Ended';
@@ -109,16 +168,24 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
                             <p className="text-emerald-50 text-sm">Bid on premium quality gear and exclusive slots</p>
                         </div>
                     </div>
-                    {onClose && (
+                    <div className="flex gap-2 items-center">
                         <button
-                            onClick={onClose}
-                            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                            onClick={() => setShowCreateForm(true)}
+                            className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-bold transition-colors"
                         >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            Create Auction
                         </button>
-                    )}
+                        {onClose && (
+                            <button
+                                onClick={onClose}
+                                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Status Message */}
@@ -132,13 +199,78 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50">
+                {/* Create Auction Form */}
+                {showCreateForm && (
+                    <div className="p-6 bg-emerald-50 border-b border-emerald-100 animate-in slide-in-from-top duration-300">
+                        <h3 className="font-bold text-emerald-900 mb-4">Create New Auction</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input 
+                                placeholder="Auction Title (e.g. SF Bat)" 
+                                className="px-4 py-2 rounded-lg border focus:ring-2 focus:ring-emerald-500 outline-none"
+                                value={newAuction.title}
+                                onChange={e => setNewAuction({...newAuction, title: e.target.value})}
+                            />
+                            <input 
+                                placeholder="Item Name" 
+                                className="px-4 py-2 rounded-lg border focus:ring-2 focus:ring-emerald-500 outline-none"
+                                value={newAuction.itemName}
+                                onChange={e => setNewAuction({...newAuction, itemName: e.target.value})}
+                            />
+                            <input 
+                                type="number" 
+                                placeholder="Starting Bid" 
+                                className="px-4 py-2 rounded-lg border focus:ring-2 focus:ring-emerald-500 outline-none"
+                                value={newAuction.startingBid || ''}
+                                onChange={e => setNewAuction({...newAuction, startingBid: parseInt(e.target.value)})}
+                            />
+                            <div className="col-span-1 md:col-span-2">
+                                <textarea 
+                                    placeholder="Description" 
+                                    className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    value={newAuction.description}
+                                    onChange={e => setNewAuction({...newAuction, description: e.target.value})}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs font-bold text-emerald-700">Start Time</label>
+                                <input 
+                                    type="datetime-local" 
+                                    className="px-4 py-2 rounded-lg border focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    value={newAuction.startTime}
+                                    onChange={e => setNewAuction({...newAuction, startTime: e.target.value})}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs font-bold text-emerald-700">End Time</label>
+                                <input 
+                                    type="datetime-local" 
+                                    className="px-4 py-2 rounded-lg border focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    value={newAuction.endTime}
+                                    onChange={e => setNewAuction({...newAuction, endTime: e.target.value})}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                            <button onClick={handleCreateAuction} className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold">Create</button>
+                            <button onClick={() => setShowCreateForm(false)} className="bg-gray-200 px-6 py-2 rounded-lg font-bold">Cancel</button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto p-6 bg-gray-100/30">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-64 gap-4">
                             <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                             <p className="text-gray-500 font-medium tracking-wide">Loading exclusive auctions...</p>
                         </div>
-                    ) : auctions.length === 0 ? (
+                    ) : auctions.filter(a => {
+                        const now = new Date();
+                        const start = new Date(a.startTime);
+                        const end = new Date(a.endTime);
+                        // Always show to admin/staff, otherwise only during duration
+                        if (currentUser?.role === 'admin' || currentUser?.role === 'staff') return true;
+                        return now >= start; // Show once it starts, even if ended (shows 'Ended')
+                    }).length === 0 ? (
                         <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
                             <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Gavel className="w-10 h-10 text-gray-400" />
@@ -148,13 +280,35 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {auctions.map((auction) => (
-                                <div key={auction._id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                            {auctions.filter(a => {
+                                const now = new Date();
+                                const start = new Date(a.startTime);
+                                if (currentUser?.role === 'admin' || currentUser?.role === 'staff') return true;
+                                return now >= start;
+                            }).map((auction) => {
+                                const isEnded = new Date(auction.endTime) <= new Date();
+                                const isUpcoming = new Date(auction.startTime) > new Date();
+                                
+                                return (
+                                <div key={auction._id} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow ${isEnded ? 'opacity-75 blur-[0.5px]' : ''}`}>
                                     <div className="p-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
-                                        <h3 className="font-bold text-lg text-gray-800">{auction.title}</h3>
-                                        <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                                            <Clock className="w-3 h-3" />
-                                            {getTimeRemaining(auction.endTime)}
+                                        <div className="flex items-center gap-3">
+                                            <h3 className="font-bold text-lg text-gray-800">{auction.title}</h3>
+                                            {isEnded && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-black uppercase">Ended</span>}
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${isEnded ? 'bg-gray-100 text-gray-400' : 'bg-emerald-50 text-emerald-700'}`}>
+                                                <Clock className="w-3 h-3" />
+                                                {getTimeRemaining(auction.endTime)}
+                                            </div>
+                                            {(currentUser?.role === 'admin' || currentUser?.role === 'staff') && (
+                                                <button 
+                                                    onClick={() => handleDeleteAuction(auction._id)}
+                                                    className="text-red-500 hover:text-red-700 p-1"
+                                                >
+                                                    <Trophy className="w-4 h-4 rotate-180" /> {/* Trash substitute */}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
 
@@ -224,7 +378,8 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
                                         ))}
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>

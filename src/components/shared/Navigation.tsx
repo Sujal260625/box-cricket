@@ -24,7 +24,7 @@ export function Navigation({ navigateTo, currentUser, onLogout }: NavigationProp
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div 
+          <div
             className="flex items-center cursor-pointer"
             onClick={() => navigateTo('home')}
           >
@@ -42,7 +42,7 @@ export function Navigation({ navigateTo, currentUser, onLogout }: NavigationProp
                 {link.name}
               </button>
             ))}
-            
+
             {currentUser ? (
               <div className="flex items-center space-x-2 sm:space-x-4 ml-4 pl-4 border-l border-green-600">
                 <button
@@ -99,7 +99,7 @@ export function Navigation({ navigateTo, currentUser, onLogout }: NavigationProp
                 {link.name}
               </button>
             ))}
-            
+
             {currentUser ? (
               <>
                 <div className="px-4 pt-2">

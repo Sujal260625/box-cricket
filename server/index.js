@@ -43,10 +43,15 @@ app.get('/api/ping', (req, res) => res.json({ status: 'ok', port: PORT, database
 
 // Email Transport
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // Port 587 uses STARTTLS
     auth: {
         user: process.env.GMAIL_USER || 'sujal.patel38833@gmail.com',
         pass: process.env.GMAIL_PASS
+    },
+    tls: {
+        rejectUnauthorized: false // Helps avoid local SSL issues
     }
 });
 
@@ -279,17 +284,19 @@ app.post('/api/bookings', async (req, res) => {
 });
 
 app.put('/api/bookings/:id/payment', async (req, res) => {
+    const { status } = req.body;
     try {
         const booking = await Booking.findByIdAndUpdate(
-            req.params.id, 
-            { paymentStatus: 'paid' }, 
+            req.params.id,
+            { paymentStatus: status || 'paid' },
             { new: true }
         );
         if (booking) {
-            await logActivity(null, 'STAFF', 'PAYMENT_COLLECTED', { 
-                bookingId: booking._id, 
+            await logActivity(null, 'ADMIN/STAFF', `PAYMENT_${(status || 'paid').toUpperCase()}`, {
+                bookingId: booking._id,
                 amount: booking.totalPrice,
-                turf: booking.turfName
+                turf: booking.turfName,
+                status: booking.paymentStatus
             });
             res.json({ success: true, booking });
         } else {
@@ -331,6 +338,16 @@ app.put('/api/inventory/:id', async (req, res) => {
     }
 });
 
+app.delete('/api/inventory/:id', async (req, res) => {
+    try {
+        const item = await Inventory.findByIdAndDelete(req.params.id);
+        await logActivity(null, 'ADMIN', 'INVENTORY_DELETED', { item: item?.itemName });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // --- AUCTIONS API ---
 
 app.get('/api/auctions', async (req, res) => {
@@ -345,8 +362,17 @@ app.get('/api/auctions', async (req, res) => {
 app.post('/api/auctions', async (req, res) => {
     try {
         const auction = await Auction.create(req.body);
-        await logActivity(null, 'ADMIN', 'AUCTION_CREATED', { title: auction.title });
+        await logActivity(req.body.createdBy || null, req.body.creatorName || 'ADMIN', 'AUCTION_CREATED', { title: auction.title });
         res.json({ success: true, auction });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.delete('/api/auctions/:id', async (req, res) => {
+    try {
+        await Auction.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Auction deleted successfully' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

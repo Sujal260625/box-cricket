@@ -7,13 +7,12 @@ import {
   Edit,
   Trash2,
   AlertTriangle,
-  CheckCircle,
   IndianRupee,
   ShoppingCart,
   TrendingUp,
-  TrendingDown,
   XCircle
 } from 'lucide-react';
+import { inventoryService } from '../../services/inventoryService';
 
 interface InventoryItem {
   id: string;
@@ -41,20 +40,19 @@ export function InventoryManagement({ currentUser, onClose, isModal = true }: In
 
   const fetchInventory = async () => {
     try {
-      const response = await fetch('https://box-cricket-qt23.onrender.com/api/inventory');
-      const data = await response.json();
+      const data = await inventoryService.getInventory();
       const mappedData = data.map((item: any) => ({
-        ...item,
-        id: item._id || item.id || Math.random().toString(),
-        name: item.itemName || item.name || 'Unknown Item',
-        category: item.category || 'sports',
+        id: item._id || item.id,
+        name: item.itemName || item.name || 'Unknown',
+        category: (item.category || 'sports').toLowerCase(),
         price: Number(item.price) || 0,
-        stock: Number(item.stock ?? item.quantity) || 0,
+        stock: Number(item.quantity !== undefined ? item.quantity : item.stock) || 0,
         minStock: Number(item.minStock) || 5,
         maxStock: Number(item.maxStock) || 50,
-        supplier: item.supplier || 'General Supplier',
+        supplier: item.supplier || 'General',
         totalSold: Number(item.totalSold) || 0,
-        storeLocation: item.storeLocation || 'Main Store'
+        storeLocation: item.storeLocation || 'Main Store',
+        lastRestocked: item.lastRestocked || item.lastChecked || new Date().toISOString()
       }));
       setInventory(mappedData);
       setLoading(false);
@@ -70,15 +68,13 @@ export function InventoryManagement({ currentUser, onClose, isModal = true }: In
 
   const [newItem, setNewItem] = useState({
     itemName: '',
-    category: 'food' as 'food' | 'sports',
+    category: 'sports' as 'food' | 'sports',
     price: 0,
     quantity: 0,
     minStock: 10,
     maxStock: 100,
-    storeLocation: '',
-    supplier: '',
-    lastRestocked: new Date().toISOString().split('T')[0],
-    totalSold: 0
+    storeLocation: 'Main Store',
+    supplier: 'General Supplier'
   });
 
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -89,41 +85,23 @@ export function InventoryManagement({ currentUser, onClose, isModal = true }: In
   const filteredInventory = inventory.filter(item => {
     const matchesSearch =
       (item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.storeLocation || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.supplier || '').toLowerCase().includes(searchTerm.toLowerCase());
-
+      (item.storeLocation || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || item.category === filterCategory;
-
     return matchesSearch && matchesCategory;
   });
 
-  const lowStockItems = inventory.filter(item => (item.stock || 0) <= (item.minStock || 0));
+  const lowStockItems = inventory.filter(item => item.stock <= item.minStock);
   const totalItems = inventory.length;
-  const totalValue = inventory.reduce((sum, item) => sum + ((item.price || 0) * (item.stock || 0)), 0);
+  const totalValue = inventory.reduce((sum, item) => sum + (item.price * item.stock), 0);
 
   const handleAddItem = async () => {
+    if (!newItem.itemName) return;
     try {
-      const response = await fetch('https://box-cricket-qt23.onrender.com/api/inventory', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newItem)
-      });
-      const data = await response.json();
-      if (data.success) {
+      const res = await inventoryService.createItem(newItem);
+      if (res.success) {
         fetchInventory();
-        setNewItem({
-          itemName: '',
-          category: 'food',
-          price: 0,
-          quantity: 0,
-          minStock: 10,
-          maxStock: 100,
-          storeLocation: '',
-          supplier: '',
-          lastRestocked: new Date().toISOString().split('T')[0],
-          totalSold: 0
-        });
         setShowAddForm(false);
+        setNewItem({ itemName: '', category: 'sports', price: 0, quantity: 0, minStock: 10, maxStock: 100, storeLocation: 'Main Store', supplier: 'General Supplier' });
       }
     } catch (error) {
       console.error('Error adding item:', error);
@@ -131,56 +109,48 @@ export function InventoryManagement({ currentUser, onClose, isModal = true }: In
   };
 
   const handleUpdateItem = async () => {
-    if (editingItem) {
-      try {
-        const response = await fetch(`https://box-cricket-qt23.onrender.com/api/inventory/${editingItem.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            itemName: editingItem.name,
-            ...editingItem
-          })
-        });
-        const data = await response.json();
-        if (data.success) {
-          fetchInventory();
-          setEditingItem(null);
-        }
-      } catch (error) {
-        console.error('Error updating item:', error);
+    if (!editingItem) return;
+    try {
+      const payload = {
+        itemName: editingItem.name,
+        category: editingItem.category,
+        price: editingItem.price,
+        quantity: editingItem.stock,
+        minStock: editingItem.minStock,
+        maxStock: editingItem.maxStock,
+        storeLocation: editingItem.storeLocation,
+        supplier: editingItem.supplier
+      };
+      const res = await inventoryService.updateItem(editingItem.id, payload);
+      if (res.success) {
+        fetchInventory();
+        setEditingItem(null);
       }
+    } catch (error) {
+      console.error('Error updating item:', error);
     }
   };
 
   const handleDeleteItem = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      try {
-        await fetch(`https://box-cricket-qt23.onrender.com/api/inventory/${id}`, {
-          method: 'DELETE'
-        });
-        fetchInventory();
-      } catch (error) {
-        console.error('Error deleting item:', error);
+    if (!window.confirm('Delete this item permanently?')) return;
+    try {
+      const res = await inventoryService.deleteItem(id);
+      if (res.success) {
+        setInventory(prev => prev.filter(i => i.id !== id));
       }
+    } catch (error) {
+      console.error('Error deleting item:', error);
     }
   };
 
-  const handleRestock = async (id: string, quantityAddition: number) => {
+  const handleRestock = async (id: string, addition: number) => {
     const item = inventory.find(i => i.id === id);
-    if (item) {
-      try {
-        await fetch(`https://box-cricket-qt23.onrender.com/api/inventory/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            quantity: (item.stock || 0) + quantityAddition,
-            lastChecked: new Date()
-          })
-        });
-        fetchInventory();
-      } catch (error) {
-        console.error('Error restocking:', error);
-      }
+    if (!item) return;
+    try {
+      await inventoryService.updateItem(id, { quantity: item.stock + addition });
+      fetchInventory();
+    } catch (error) {
+      console.error('Error restocking:', error);
     }
   };
 

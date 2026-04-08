@@ -46,9 +46,9 @@ export default function App() {
       // Redirect to appropriate dashboard based on role
       const dashboardPage = `${user.role}-dashboard`;
       setCurrentPage(dashboardPage);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login failed:', error);
-      // In a real app, you'd show an error message to the user
+      throw new Error(error.message || 'Invalid email or password');
     }
   };
 
@@ -60,9 +60,9 @@ export default function App() {
       // Redirect to appropriate dashboard based on role
       const dashboardPage = `${user.role}-dashboard`;
       setCurrentPage(dashboardPage);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Phone login failed:', error);
-      // In a real app, you'd show an error message to the user
+      throw new Error(error.message || 'Invalid phone number or OTP');
     }
   };
 

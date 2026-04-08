@@ -13,8 +13,10 @@ import {
   Plus,
   UserCircle,
   Users,
-  Layout
+  Layout,
+  Gavel
 } from 'lucide-react';
+import { AuctionSystem } from '../user/AuctionSystem';
 import LiveScoreCard from './matches/LiveScoreCard';
 import StoreItemCard from './store/StoreItemCard';
 import StaffIdCard from './dashboard/StaffIdCard';
@@ -28,7 +30,7 @@ interface StaffDashboardProps {
   navigateTo: (page: string) => void;
 }
 
-type StaffView = 'overview' | 'payments' | 'matches' | 'bookings' | 'stores' | 'profile' | 'players' | 'turf';
+type StaffView = 'overview' | 'payments' | 'matches' | 'bookings' | 'stores' | 'profile' | 'players' | 'turf' | 'auctions';
 
 const API_BASE_URL = 'https://box-cricket-qt23.onrender.com/api';
 
@@ -38,6 +40,7 @@ export function StaffDashboard({ user, onLogout, navigateTo }: StaffDashboardPro
   const [matches, setMatches] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddMatchModal, setShowAddMatchModal] = useState(false);
   const [newMatch, setNewMatch] = useState({
@@ -54,21 +57,24 @@ export function StaffDashboard({ user, onLogout, navigateTo }: StaffDashboardPro
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [matchesRes, bookingsRes, playersRes] = await Promise.all([
+      const [matchesRes, bookingsRes, playersRes, ordersRes] = await Promise.all([
         fetch(`${API_BASE_URL}/matches`),
         fetch(`${API_BASE_URL}/bookings`),
-        fetch(`${API_BASE_URL}/players`)
+        fetch(`${API_BASE_URL}/players`),
+        fetch(`${API_BASE_URL}/orders`)
       ]);
 
-      const [matchesData, bookingsData, playersData] = await Promise.all([
+      const [matchesData, bookingsData, playersData, ordersData] = await Promise.all([
         matchesRes.json(),
         bookingsRes.json(),
-        playersRes.json()
+        playersRes.json(),
+        ordersRes.json()
       ]);
 
       setMatches(matchesData);
       setBookings(bookingsData);
       setPlayers(playersData);
+      setOrders(ordersData.orders || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -121,15 +127,17 @@ export function StaffDashboard({ user, onLogout, navigateTo }: StaffDashboardPro
     }
   };
 
-  const handleUpdatePaymentStatus = async (bookingId: string) => {
+  const handleUpdatePaymentStatus = async (bookingId: string, status: 'paid' | 'rejected') => {
     try {
       const res = await fetch(`${API_BASE_URL}/bookings/${bookingId}/payment`, {
-        method: 'PUT'
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
       });
       const data = await res.json();
       if (data.success) {
         setBookings(prev => prev.map(b => 
-          (b._id || b.id) === bookingId ? { ...b, paymentStatus: 'paid' } : b
+          (b._id || b.id) === bookingId ? { ...b, paymentStatus: status } : b
         ));
       }
     } catch (error) {
@@ -142,12 +150,13 @@ export function StaffDashboard({ user, onLogout, navigateTo }: StaffDashboardPro
     { id: 'payments', label: 'Assigned Payments', icon: <IndianRupee className="w-5 h-5" /> },
     { id: 'matches', label: 'Ongoing Matches', icon: <Activity className="w-5 h-5" /> },
     { id: 'bookings', label: 'Manage Bookings', icon: <Calendar className="w-5 h-5" /> },
+    { id: 'auctions', label: 'Premium Auctions', icon: <Gavel className="w-5 h-5" /> },
     { id: 'stores', label: 'Store Management', icon: <Store className="w-5 h-5" /> },
     { id: 'players', label: 'Player Registry', icon: <Users className="w-5 h-5" /> },
     { id: 'turf', label: 'Turf Ground', icon: <Layout className="w-5 h-5" /> },
   ];
 
-  const assignedBookings = bookings.slice(0, 5);
+  const assignedBookings = bookings.filter(b => b.paymentStatus !== 'rejected').slice(0, 5);
   const liveMatches = matches.filter(m => m.status === 'live');
   const pendingPayments = bookings.filter(b => b.paymentStatus === 'pending');
 
@@ -243,11 +252,11 @@ export function StaffDashboard({ user, onLogout, navigateTo }: StaffDashboardPro
 
                 <div className="bg-white rounded-xl shadow-md p-6">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-gray-600 font-medium">Live Matches</p>
-                    <Activity className="w-8 h-8 text-red-600" />
+                    <p className="text-gray-600 font-medium">Store Revenue</p>
+                    <Store className="w-8 h-8 text-green-600" />
                   </div>
-                  <p className="text-3xl font-bold text-red-600">{liveMatches.length}</p>
-                  <p className="text-sm text-gray-500 mt-1">Ongoing now</p>
+                  <p className="text-3xl font-bold text-green-600">₹{orders.reduce((sum, o) => sum + o.total, 0)}</p>
+                  <p className="text-sm text-gray-500 mt-1">{orders.length} online orders</p>
                 </div>
               </div>
 
@@ -286,7 +295,7 @@ export function StaffDashboard({ user, onLogout, navigateTo }: StaffDashboardPro
               <div className="bg-green-600 rounded-xl shadow-md p-6 mb-6 text-white flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm font-medium uppercase tracking-wider">Total Paid Collected</p>
-                  <p className="text-4xl font-bold mt-1">₹{bookings.reduce((sum, b) => b.paymentStatus === 'paid' ? sum + b.totalPrice : sum, 0)}</p>
+                  <p className="text-4xl font-bold mt-1">₹{bookings.reduce((sum, b) => b.paymentStatus === 'paid' ? sum + (b.totalPrice || 0) : sum, 0)}</p>
                 </div>
                 <IndianRupee className="w-12 h-12 text-green-200 opacity-50" />
               </div>
@@ -303,22 +312,34 @@ export function StaffDashboard({ user, onLogout, navigateTo }: StaffDashboardPro
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-green-600">₹{booking.totalPrice}</p>
-                          <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold uppercase ${booking.paymentStatus === 'paid'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
+                          <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                            booking.paymentStatus === 'paid'
+                              ? 'bg-green-100 text-green-700'
+                              : booking.paymentStatus === 'rejected'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-yellow-100 text-yellow-700'
                             }`}>
                             {booking.paymentStatus}
                           </span>
                         </div>
                       </div>
                       {booking.paymentStatus === 'pending' && (
-                        <button 
-                          onClick={() => handleUpdatePaymentStatus(booking._id || booking.id)}
-                          className="w-full mt-3 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-bold shadow-sm"
-                        >
-                          <CheckCircle className="w-5 h-5" />
-                          Mark as Paid
-                        </button>
+                        <div className="flex gap-2 mt-3">
+                          <button 
+                            onClick={() => handleUpdatePaymentStatus(booking._id || booking.id, 'paid')}
+                            className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-bold shadow-sm"
+                          >
+                            <CheckCircle className="w-5 h-5" />
+                            Accept
+                          </button>
+                          <button 
+                            onClick={() => handleUpdatePaymentStatus(booking._id || booking.id, 'rejected')}
+                            className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 font-bold shadow-sm"
+                          >
+                            <LogOut className="w-5 h-5" />
+                            Reject
+                          </button>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -537,6 +558,11 @@ export function StaffDashboard({ user, onLogout, navigateTo }: StaffDashboardPro
           )}
           {currentView === 'turf' && (
             <TurfGround />
+          )}
+          {currentView === 'auctions' && (
+            <div className="h-full">
+              <AuctionSystem currentUser={user} isModal={false} />
+            </div>
           )}
         </div>
       </div>
