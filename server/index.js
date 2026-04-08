@@ -560,6 +560,6 @@ const server = app.listen(PORT, () => {
 });
 
 // Explicitly handle all other routes by serving the index.html (SPA support)
-app.get('(.*)', (req, res) => {
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
