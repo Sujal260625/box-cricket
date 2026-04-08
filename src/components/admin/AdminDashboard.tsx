@@ -15,7 +15,9 @@ import {
   LogOut,
   TrendingUp,
   BarChart3,
-  Gavel
+  Gavel,
+  Menu,
+  X
 } from 'lucide-react';
 import { AuctionSystem } from '../user/AuctionSystem';
 import { mockBookings, mockMatches, mockStaff, mockStoreItems, mockTurfs } from '../../data/mockData';
@@ -58,6 +60,7 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
   const [orders, setOrders] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -181,57 +184,105 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-green-700 text-white flex flex-col">
-          <div className="p-6 border-b border-green-600">
-            <h2 className="text-2xl mb-1">TurfFlow Admin</h2>
-            <p className="text-sm text-green-200">{user.name}</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+        {/* Mobile Header (Only visible on mobile) */}
+        <div className="md:hidden flex items-center justify-between p-4 bg-green-700 text-white sticky top-0 z-[100] shadow-md">
+          <div className="flex items-center gap-2">
+            <Activity className="w-6 h-6 text-green-200" />
+            <span className="font-bold text-lg">TurfFlow Admin</span>
           </div>
-
-          <nav className="flex-1 p-4">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  if (item.action) {
-                    item.action();
-                  } else {
-                    setCurrentView(item.id as AdminView);
-                  }
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${currentView === item.id && !item.action
-                  ? 'bg-green-600'
-                  : 'hover:bg-green-600/50'
-                  }`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </nav>
-
-          <div className="p-4 border-t border-green-600">
-            <button
-              onClick={() => navigateTo('home')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-green-600 transition-colors mb-2"
-            >
-              <Settings className="w-5 h-5" />
-              <span>Public Site</span>
-            </button>
-            <button
-              onClick={onLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-green-600 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Logout</span>
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 hover:bg-green-600 rounded-lg transition-colors"
+            aria-label="Toggle Menu"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-8">
+        {/* Backdrop (Only visible on mobile when menu is open) */}
+        {isMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[110] md:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside className={`
+          fixed md:sticky top-0 left-0 h-screen w-72 bg-green-700 text-white flex flex-col z-[120]
+          transform transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}>
+          {/* Logo Section (Desktop Only) */}
+          <div className="p-6 border-b border-green-600 hidden md:flex items-center gap-3">
+            <Activity className="w-8 h-8 text-green-300" />
+            <div>
+              <h2 className="text-xl font-bold leading-none">TurfFlow</h2>
+              <p className="text-xs text-green-300 mt-1 uppercase tracking-wider font-bold">Admin Portal</p>
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar">
+            <div className="space-y-1">
+              {menuItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    if (item.action) {
+                      item.action();
+                    } else {
+                      setCurrentView(item.id as AdminView);
+                    }
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                    currentView === item.id && !item.action
+                      ? 'bg-white/15 text-white shadow-lg ring-1 ring-white/20'
+                      : 'hover:bg-white/10 text-green-50'
+                  }`}
+                >
+                  <span className={`${currentView === item.id && !item.action ? 'text-green-300' : 'text-green-200 group-hover:text-white'}`}>
+                    {item.icon}
+                  </span>
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </nav>
+
+          {/* Footer Navigation */}
+          <div className="p-4 border-t border-green-600 space-y-1 bg-green-800/40">
+            <div className="px-4 py-2 mb-2">
+              <p className="text-xs text-green-300 font-bold uppercase tracking-widest">{user.name}</p>
+            </div>
+            <button
+              onClick={() => {
+                navigateTo('home');
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 text-green-50 transition-colors"
+            >
+              <Settings className="w-5 h-5 text-green-200" />
+              <span className="font-medium">Public Site</span>
+            </button>
+            <button
+              onClick={() => {
+                onLogout();
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/20 text-red-100 transition-colors"
+            >
+              <LogOut className="w-5 h-5 text-red-300" />
+              <span className="font-medium">Logout</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 w-full min-w-0 bg-gray-50 flex flex-col h-screen overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 md:p-8">
             {currentView === 'overview' && (
               <div>
                 <h1 className="text-3xl mb-6">Dashboard Overview</h1>
@@ -895,7 +946,7 @@ export function AdminDashboard({ user, onLogout, navigateTo }: AdminDashboardPro
               </div>
             )}
           </div>
-        </div>
+        </main>
       </div>
 
       {showStaffTracker && (

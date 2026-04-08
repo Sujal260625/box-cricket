@@ -16,7 +16,9 @@ import {
   CreditCard,
   Package,
   Users,
-  Gavel
+  Gavel,
+  Menu,
+  X
 } from 'lucide-react';
 import { mockTurfs, mockBookings, mockTournaments, mockMatches, mockStoreItems, mockReviews } from '../../data/mockData';
 import { OnlineStore } from './store/OnlineStore';
@@ -44,6 +46,7 @@ export function UserDashboard({ user, onLogout, navigateTo }: UserDashboardProps
   const [selectedTournament, setSelectedTournament] = useState<any | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -97,53 +100,100 @@ export function UserDashboard({ user, onLogout, navigateTo }: UserDashboardProps
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-purple-700 text-white flex flex-col">
-          <div className="p-6 border-b border-purple-600">
-            <h2 className="text-2xl mb-1">My Dashboard</h2>
-            <p className="text-sm text-purple-200">{user.name}</p>
-          </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+      {/* Mobile Top Header */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-purple-800 text-white sticky top-0 z-[100] shadow-lg">
+        <div className="flex items-center gap-2">
+          <Activity className="w-6 h-6 text-purple-200" />
+          <span className="font-bold text-lg">My Dashboard</span>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 hover:bg-purple-700 rounded-lg transition-colors border border-purple-600/30"
+          aria-label="Toggle Menu"
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
 
-          <nav className="flex-1 p-4">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setCurrentView(item.id as UserView | 'auction');
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${currentView === item.id
-                  ? 'bg-purple-600'
-                  : 'hover:bg-purple-600/50'
-                  }`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </nav>
+      {/* Modern Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] md:hidden transition-opacity duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
 
-          <div className="p-4 border-t border-purple-600">
-            <button
-              onClick={() => navigateTo('home')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-purple-600 transition-colors mb-2"
-            >
-              <Settings className="w-5 h-5" />
-              <span>Public Site</span>
-            </button>
-            <button
-              onClick={onLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-purple-600 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Logout</span>
-            </button>
+      {/* Sidebar - Polished Purple Layout */}
+      <aside className={`
+        fixed md:sticky top-0 left-0 h-screen w-72 bg-purple-700 text-white flex flex-col z-[120]
+        transform transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        {/* Profile Branding */}
+        <div className="p-6 border-b border-purple-600 bg-purple-800/40">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-purple-700 font-black text-2xl shadow-inner">
+              {user.name.charAt(0)}
+            </div>
+            <div>
+              <h2 className="text-xl font-black tracking-tight leading-none">TurfFlow</h2>
+              <p className="text-[10px] text-purple-200 mt-1 uppercase tracking-widest font-black opacity-80">{user.name}</p>
+            </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-8">
+        {/* Scrollable Navigation */}
+        <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-1">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setCurrentView(item.id as UserView | 'auction');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                currentView === item.id
+                  ? 'bg-white text-purple-700 shadow-xl shadow-purple-900/40 scale-[1.02]'
+                  : 'text-purple-50 hover:bg-white/10'
+              }`}
+            >
+              <span className={`transition-colors ${currentView === item.id ? 'text-purple-700' : 'text-purple-300 group-hover:text-white'}`}>
+                {item.icon}
+              </span>
+              <span className="font-bold tracking-tight">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* User Footer Actions */}
+        <div className="p-4 border-t border-purple-600 bg-purple-900/30 space-y-1">
+          <button
+            onClick={() => {
+              navigateTo('home');
+              setIsMobileMenuOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-purple-100 hover:bg-white/10 transition-colors"
+          >
+            <Settings className="w-5 h-5 text-purple-300" />
+            <span className="font-bold">Public Site</span>
+          </button>
+          <button
+            onClick={() => {
+              onLogout();
+              setIsMobileMenuOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-100 hover:bg-red-500/20 transition-colors"
+          >
+            <LogOut className="w-5 h-5 text-red-300" />
+            <span className="font-bold">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 w-full min-w-0 bg-gray-50 flex flex-col h-screen overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
             {currentView === 'overview' && (
               <div>
                 <h1 className="text-3xl mb-6">Welcome back, {user.name}!</h1>
@@ -737,7 +787,7 @@ export function UserDashboard({ user, onLogout, navigateTo }: UserDashboardProps
               />
             )}
           </div>
-        </div>
+        </main>
       </div>
 
       {showStore && (

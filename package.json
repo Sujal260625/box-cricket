@@ -39,6 +39,8 @@
             "dayjs": "^1.11.20",
             "embla-carousel-react": "^8.6.0",
             "input-otp": "^1.4.2",
+            "jspdf": "^4.2.1",
+            "jspdf-autotable": "^5.0.7",
             "lucide-react": "^0.487.0",
             "mongoos": "^0.0.1-security",
             "next-themes": "^0.4.6",

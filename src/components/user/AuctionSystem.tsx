@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gavel, Clock, Trophy, User, ArrowUpCircle, CheckCircle2 } from 'lucide-react';
+import { Gavel, Clock, Trophy, User, ArrowUpCircle, CheckCircle2, Trash2 } from 'lucide-react';
 
 interface AuctionItem {
     _id: string;
@@ -42,7 +42,7 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
 
     useEffect(() => {
         fetchAuctions();
-        const interval = setInterval(fetchAuctions, 10000); // Polling every 10s
+        const interval = setInterval(fetchAuctions, 3000); // Polling every 3s for real-time
         return () => clearInterval(interval);
     }, []);
 
@@ -158,27 +158,27 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
     const content = (
             <div className={`bg-white shadow-2xl flex flex-col border border-gray-100 ${isModal ? 'rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden' : 'rounded-xl h-full'}`}>
                 {/* Header */}
-                <div className="bg-gradient-to-r from-emerald-600 to-green-500 p-6 flex justify-between items-center text-white">
+                <div className="bg-white border-b border-gray-200 p-6 flex justify-between items-center text-gray-900">
                     <div className="flex items-center gap-3">
-                        <div className="bg-white/20 p-2 rounded-lg">
-                            <Gavel className="w-6 h-6 text-white" />
+                        <div className="bg-emerald-100 p-2 rounded-lg">
+                            <Gavel className="w-6 h-6 text-emerald-600" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold">Turf Equipment Auction</h2>
-                            <p className="text-emerald-50 text-sm">Bid on premium quality gear and exclusive slots</p>
+                            <h2 className="text-2xl font-bold text-gray-900">Turf Equipment Auction</h2>
+                            <p className="text-gray-500 text-sm">Bid on premium quality gear and exclusive slots</p>
                         </div>
                     </div>
                     <div className="flex gap-2 items-center">
                         <button
                             onClick={() => setShowCreateForm(true)}
-                            className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-bold transition-colors"
+                            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-emerald-200"
                         >
                             Create Auction
                         </button>
                         {onClose && (
                             <button
                                 onClick={onClose}
-                                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -304,9 +304,10 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
                                             {(currentUser?.role === 'admin' || currentUser?.role === 'staff') && (
                                                 <button 
                                                     onClick={() => handleDeleteAuction(auction._id)}
-                                                    className="text-red-500 hover:text-red-700 p-1"
+                                                    className="flex items-center gap-1.5 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm"
                                                 >
-                                                    <Trophy className="w-4 h-4 rotate-180" /> {/* Trash substitute */}
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Remove
                                                 </button>
                                             )}
                                         </div>
@@ -337,25 +338,25 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
                                                 {activeAuctionId === auction._id && activeItemId === item._id ? (
                                                     <div className="flex gap-2 animate-in zoom-in duration-200">
                                                         <div className="relative flex-1">
-                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-900 font-bold">₹</span>
                                                             <input
                                                                 type="number"
                                                                 value={bidAmount || ''}
                                                                 onChange={(e) => setBidAmount(parseInt(e.target.value))}
-                                                                className="w-full pl-7 pr-4 py-2 bg-white border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none font-bold"
+                                                                className="w-full pl-7 pr-4 py-2 bg-white border-2 border-gray-900 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-gray-900"
                                                                 placeholder={`Min ${item.currentBid + 10}`}
                                                                 autoFocus
                                                             />
                                                         </div>
                                                         <button
                                                             onClick={() => handleBid(auction._id, item._id, item.currentBid)}
-                                                            className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200 flex items-center gap-2"
+                                                            className="px-6 py-2 bg-gray-900 text-white rounded-lg font-bold hover:bg-emerald-600 transition-colors shadow-lg flex items-center gap-2"
                                                         >
                                                             Confirm
                                                         </button>
                                                         <button
                                                             onClick={() => { setActiveAuctionId(null); setActiveItemId(null); }}
-                                                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-colors"
+                                                            className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg font-bold hover:bg-gray-300 transition-colors"
                                                         >
                                                             Cancel
                                                         </button>
@@ -368,9 +369,9 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
                                                             setBidAmount(item.currentBid + 10);
                                                         }}
                                                         disabled={auction.status !== 'active'}
-                                                        className="w-full py-2.5 bg-gray-900 text-white rounded-lg font-bold hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:text-gray-500 group"
+                                                        className="w-full py-3 bg-white border-2 border-gray-900 text-gray-900 rounded-lg font-black hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2 disabled:bg-gray-100 disabled:border-gray-300 disabled:text-gray-400 group uppercase tracking-widest text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
                                                     >
-                                                        <ArrowUpCircle className="w-4 h-4 group-hover:translate-y-[-2px] transition-transform" />
+                                                        <ArrowUpCircle className="w-4 h-4" />
                                                         {auction.status === 'active' ? 'Place a Bid' : 'Auction Closed'}
                                                     </button>
                                                 )}
@@ -388,7 +389,6 @@ export function AuctionSystem({ currentUser, onClose, isModal = true }: AuctionS
                 <div className="p-4 bg-gray-100 border-t flex justify-between items-center text-xs text-gray-500 font-medium">
                     <div className="flex items-center gap-4">
                         <span className="flex items-center gap-1"><User className="w-3 h-3" /> {currentUser?.name || 'Guest'}</span>
-                        <span className="bg-white px-2 py-0.5 rounded border border-gray-200">Balance: ₹10,000 (Demo)</span>
                     </div>
                     <p>© 2026 TurfFlow Premium Auctions</p>
                 </div>
