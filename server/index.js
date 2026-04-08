@@ -555,11 +555,12 @@ app.delete('/api/grounds/:id', async (req, res) => {
     }
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
 
 // Explicitly handle all other routes by serving the index.html (SPA support)
+// Route not found fallback
 app.use((req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+    res.status(404).send("Route not found");
 });
